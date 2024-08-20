@@ -58,7 +58,7 @@ function PerformanceList() {
               <h3>{performance.performanceName}</h3>
               <p>장소: {performance.performancePlace}</p>
               <p>일시: {new Date(performance.performanceShowtime).toLocaleString()}</p>
-              <Link to={`/performances/${performance.performanceId}/waiting`}>대기열 참여</Link>
+              <Link to={`/performances/${performance.performanceId}/select`}>좌석 구매</Link>
             </li>
           ))}
         </ul>
