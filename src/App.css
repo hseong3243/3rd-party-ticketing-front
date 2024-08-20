@@ -23,10 +23,18 @@ header {
 
 nav {
   display: flex;
-  justify-content: space-around;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 20px;
 }
 
-nav a {
+nav > div {
+  display: flex;
+  align-items: center;
+}
+
+nav a, nav button {
+  margin-left: 15px;
   text-decoration: none;
   color: #333;
   padding: 5px 10px;
@@ -35,6 +43,27 @@ nav a {
 nav a.active {
   font-weight: bold;
   color: #0066cc;
+}
+
+nav button, .signup-button {
+  background-color: #0066cc;
+  color: white;
+  border: none;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+nav button:hover, .signup-button:hover {
+  background-color: #0052a3;
+}
+
+.signup-button {
+  background-color: #28a745;
+}
+
+.signup-button:hover {
+  background-color: #218838;
+  text-decoration: none;
 }
 
 main {
@@ -48,42 +77,6 @@ main {
   border-radius: 8px;
   padding: 20px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-nav {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0 20px;
-}
-
-nav a {
-  text-decoration: none;
-  color: #333;
-  padding: 5px 10px;
-}
-
-nav a.active {
-  font-weight: bold;
-  color: #0066cc;
-}
-
-nav button {
-  background-color: #0066cc;
-  color: white;
-  border: none;
-  padding: 5px 10px;
-  cursor: pointer;
-  border-radius: 4px;
-}
-
-nav button:hover {
-  background-color: #0052a3;
-}
-
-/* 기존 CSS에 추가 */
-
-.content {
   max-width: 600px;
   margin: 0 auto;
 }
@@ -135,33 +128,4 @@ a {
 
 a:hover {
   text-decoration: underline;
-}
-
-nav {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0 20px;
-}
-
-nav > div {
-  display: flex;
-  align-items: center;
-}
-
-nav a, nav button {
-  margin-left: 15px;
-}
-
-.signup-button {
-  background-color: #28a745;
-  color: white;
-  padding: 5px 10px;
-  border-radius: 4px;
-  text-decoration: none;
-}
-
-.signup-button:hover {
-  background-color: #218838;
-  text-decoration: none;
 }
