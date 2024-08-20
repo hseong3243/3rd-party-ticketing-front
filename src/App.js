@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { BrowserRouter as Router, Routes, Route, NavLink, useNavigate } from 'react-router-dom';
 import './App.css';
+import useAuthStore from './store';
 
 import Signup from './components/Signup.js';
 import Login from './components/Login.js';
@@ -10,19 +11,14 @@ import PerformanceSelect from './components/PerformanceSelect';
 import PerformancePayment from './components/PerformancePayment.js';
 
 function App() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-
-  const handleLogin = () => setIsLoggedIn(true);
-  const handleLogout = () => setIsLoggedIn(false);
-
   return (
     <Router>
       <div className="app">
-        <Header isLoggedIn={isLoggedIn} onLogout={handleLogout} />
+        <Header />
         <main>
           <Routes>
             <Route path="/signup" element={<Signup />} />
-            <Route path="/login" element={<Login onLogin={handleLogin} />} />
+            <Route path="/login" element={<Login />} />
             <Route path="/performances" element={<PerformanceList />} />
             <Route path="/performances/:performanceId/waiting" element={<PerformanceWaiting />} />
             <Route path="/performances/:performanceId/select" element={<PerformanceSelect />} />
@@ -35,14 +31,17 @@ function App() {
   );
 }
 
-function Header({ isLoggedIn, onLogout }) {
+function Header() {
   const navigate = useNavigate();
+  const { isLoggedIn, logout } = useAuthStore();
 
   const handleAuthAction = () => {
     if (isLoggedIn) {
-      onLogout();
+      logout();
+      navigate('/');
+    } else {
+      navigate('/login');
     }
-    navigate(isLoggedIn ? '/' : '/login');
   };
 
   return (
