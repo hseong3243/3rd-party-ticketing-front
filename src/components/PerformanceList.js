@@ -7,10 +7,19 @@ function PerformanceList() {
   const [performances, setPerformances] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const accessToken = useAuthStore((state) => state.accessToken);
+  const { isLoggedIn, accessToken } = useAuthStore(state => ({
+    isLoggedIn: state.isLoggedIn,
+    accessToken: state.accessToken
+  }));
 
   useEffect(() => {
     const fetchPerformances = async () => {
+      if (!isLoggedIn) {
+        setError('로그인이 필요합니다. 로그인 후 다시 시도해 주세요.');
+        setLoading(false);
+        return;
+      }
+
       try {
         const response = await fetch(`${config.API_URL}/api/performances`, {
           method: 'GET',
@@ -34,7 +43,7 @@ function PerformanceList() {
     };
 
     fetchPerformances();
-  }, []);
+  }, [isLoggedIn, accessToken]);
 
   if (loading) return <div className="content">로딩 중...</div>;
 
