@@ -52,8 +52,8 @@ function PerformanceSelect() {
   if (error) return <div className="content">에러: {error}</div>;
 
   const rows = [];
-  for (let i = 0; i < seats.length; i += 25) {
-    rows.push(seats.slice(i, i + 25));
+  for (let i = 0; i < seats.length; i += 15) {
+    rows.push(seats.slice(i, i + 15));
   }
 
   return (
