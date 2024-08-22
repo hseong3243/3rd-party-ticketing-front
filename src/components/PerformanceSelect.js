@@ -34,12 +34,10 @@ function PerformanceSelect() {
         const data = await response.json();
 
         if ('remainingCount' in data) {
-          // 대기열 정보
           setRemainingCount(data.remainingCount);
           setIsWaiting(true);
           navigate(`/performances/${performanceId}/waiting`);
         } else {
-          // 좌석 정보
           const sortedSeats = data.items.sort((a, b) => a.seatId - b.seatId);
           const numberedSeats = sortedSeats.map((seat, index) => ({
             ...seat,
@@ -59,23 +57,39 @@ function PerformanceSelect() {
     fetchSeats();
   }, [performanceId, accessToken, setRemainingCount, navigate]);
 
-  if (loading) return <div>로딩 중...</div>;
-  if (error) return <div>에러: {error}</div>;
-  if (isWaiting) return <div>대기열에 진입했습니다. 잠시만 기다려주세요.</div>;
-
   const selectSeat = (seatId) => {
     setSelectedSeat(seatId);
   };
 
-  const handlePayment = () => {
+  const handlePayment = async () => {
     if (selectedSeat) {
-      const selectedSeatInfo = seats.find(seat => seat.seatId === selectedSeat);
-      navigate(`/performances/${performanceId}/payment`, { 
-        state: { 
-          seatId: selectedSeat, 
-          seatNumber: selectedSeatInfo.displayNumber 
-        } 
-      });
+      try {
+        const response = await fetch(`${config.API_URL}/api/seats/select`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${accessToken}`,
+            'performanceId': `${performanceId}`
+          },
+          body: JSON.stringify({
+            seatId: selectedSeat
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error('좌석 선택에 실패했습니다.');
+        }
+
+        const selectedSeatInfo = seats.find(seat => seat.seatId === selectedSeat);
+        navigate(`/performances/${performanceId}/payment`, { 
+          state: { 
+            seatId: selectedSeat, 
+            seatNumber: selectedSeatInfo.displayNumber 
+          } 
+        });
+      } catch (err) {
+        setError(err.message);
+      }
     }
   };
 
@@ -83,6 +97,10 @@ function PerformanceSelect() {
   for (let i = 0; i < seats.length; i += 15) {
     rows.push(seats.slice(i, i + 15));
   }
+
+  if (loading) return <div>로딩 중...</div>;
+  if (error) return <div>에러: {error}</div>;
+  if (isWaiting) return <div>대기열에 진입했습니다. 잠시만 기다려주세요.</div>;
 
   return (
     <div className="content">
