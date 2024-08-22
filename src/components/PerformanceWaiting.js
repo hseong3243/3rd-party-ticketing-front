@@ -43,10 +43,10 @@ function PerformanceWaiting() {
     };
 
     // 초기 fetch
-    fetchRemainingCount();
+    // fetchRemainingCount();
 
-    // 1초마다 fetch
-    const intervalId = setInterval(fetchRemainingCount, 1000);
+    // 5초마다 fetch
+    const intervalId = setInterval(fetchRemainingCount, 5000);
 
     // Clean up
     return () => clearInterval(intervalId);
