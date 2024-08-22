@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import config from '../config';
 import useAuthStore from '../store';
 import useCounterStore from '../counterStore';
-import { useNavigate } from 'react-router-dom';
 
 function PerformanceSelect() {
   const { performanceId } = useParams();
@@ -58,7 +57,7 @@ function PerformanceSelect() {
     };
 
     fetchSeats();
-  }, [performanceId, accessToken, setRemainingCount]);
+  }, [performanceId, accessToken, setRemainingCount, navigate]);
 
   if (loading) return <div>로딩 중...</div>;
   if (error) return <div>에러: {error}</div>;
@@ -66,6 +65,18 @@ function PerformanceSelect() {
 
   const selectSeat = (seatId) => {
     setSelectedSeat(seatId);
+  };
+
+  const handlePayment = () => {
+    if (selectedSeat) {
+      const selectedSeatInfo = seats.find(seat => seat.seatId === selectedSeat);
+      navigate(`/performances/${performanceId}/payment`, { 
+        state: { 
+          seatId: selectedSeat, 
+          seatNumber: selectedSeatInfo.displayNumber 
+        } 
+      });
+    }
   };
 
   const rows = [];
@@ -108,13 +119,16 @@ function PerformanceSelect() {
         ))}
       </div>
       <p>선택된 좌석: {selectedSeat ? seats.find(seat => seat.seatId === selectedSeat)?.displayNumber : '없음'}</p>
-      <Link to={`/performances/${performanceId}/payment`} 
-            style={{ 
-              pointerEvents: !selectedSeat ? 'none' : 'auto',
-              opacity: !selectedSeat ? 0.5 : 1
-            }}>
+      <button 
+        onClick={handlePayment}
+        disabled={!selectedSeat}
+        style={{ 
+          opacity: selectedSeat ? 1 : 0.5,
+          cursor: selectedSeat ? 'pointer' : 'not-allowed'
+        }}
+      >
         결제하기
-      </Link>
+      </button>
     </div>
   );
 }
