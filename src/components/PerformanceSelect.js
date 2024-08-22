@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import config from '../config';
 import useAuthStore from '../store';
 import useCounterStore from '../counterStore';
+import { useNavigate } from 'react-router-dom';
 
 function PerformanceSelect() {
   const { performanceId } = useParams();
@@ -13,6 +14,7 @@ function PerformanceSelect() {
   const [isWaiting, setIsWaiting] = useState(false);
   const { accessToken } = useAuthStore(state => ({ accessToken: state.accessToken }));
   const setRemainingCount = useCounterStore(state => state.setRemainingCount);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchSeats = async () => {
@@ -36,6 +38,7 @@ function PerformanceSelect() {
           // 대기열 정보
           setRemainingCount(data.remainingCount);
           setIsWaiting(true);
+          navigate(`/performances/${performanceId}/waiting`);
         } else {
           // 좌석 정보
           const sortedSeats = data.items.sort((a, b) => a.seatId - b.seatId);
