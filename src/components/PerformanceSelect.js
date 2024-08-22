@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import config from '../config';
 import useAuthStore from '../store';
+import useCounterStore from '../counterStore';
 
 function PerformanceSelect() {
   const { performanceId } = useParams();
@@ -9,7 +10,9 @@ function PerformanceSelect() {
   const [selectedSeat, setSelectedSeat] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [isWaiting, setIsWaiting] = useState(false);
   const { accessToken } = useAuthStore(state => ({ accessToken: state.accessToken }));
+  const setRemainingCount = useCounterStore(state => state.setRemainingCount);
 
   useEffect(() => {
     const fetchSeats = async () => {
@@ -19,7 +22,7 @@ function PerformanceSelect() {
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${accessToken}`,
-            'performanceId': `${performanceId}`
+            'performanceId': `${performanceId}j`
           },
         });
 
@@ -28,12 +31,22 @@ function PerformanceSelect() {
         }
 
         const data = await response.json();
-        const sortedSeats = data.items.sort((a, b) => a.seatId - b.seatId);
-        const numberedSeats = sortedSeats.map((seat, index) => ({
-          ...seat,
-          displayNumber: index + 1
-        }));
-        setSeats(numberedSeats);
+
+        if ('remainingCount' in data) {
+          // 대기열 정보
+          setRemainingCount(data.remainingCount);
+          setIsWaiting(true);
+        } else {
+          // 좌석 정보
+          const sortedSeats = data.items.sort((a, b) => a.seatId - b.seatId);
+          const numberedSeats = sortedSeats.map((seat, index) => ({
+            ...seat,
+            displayNumber: index + 1
+          }));
+          setSeats(numberedSeats);
+          setIsWaiting(false);
+        }
+
         setLoading(false);
       } catch (err) {
         setError(err.message);
@@ -42,14 +55,15 @@ function PerformanceSelect() {
     };
 
     fetchSeats();
-  }, [performanceId, accessToken]);
+  }, [performanceId, accessToken, setRemainingCount]);
+
+  if (loading) return <div>로딩 중...</div>;
+  if (error) return <div>에러: {error}</div>;
+  if (isWaiting) return <div>대기열에 진입했습니다. 잠시만 기다려주세요.</div>;
 
   const selectSeat = (seatId) => {
     setSelectedSeat(seatId);
   };
-
-  if (loading) return <div className="content">로딩 중...</div>;
-  if (error) return <div className="content">에러: {error}</div>;
 
   const rows = [];
   for (let i = 0; i < seats.length; i += 15) {
