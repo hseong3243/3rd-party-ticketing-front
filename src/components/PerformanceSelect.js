@@ -22,7 +22,7 @@ function PerformanceSelect() {
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${accessToken}`,
-            'performanceId': `${performanceId}j`
+            'performanceId': `${performanceId}`
           },
         });
 
