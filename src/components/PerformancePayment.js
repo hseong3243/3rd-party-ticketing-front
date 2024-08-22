@@ -97,7 +97,7 @@ function PerformancePayment() {
     <div className="content" style={{ maxWidth: '600px', margin: '0 auto', padding: '20px' }}>
       <h2 style={{ textAlign: 'center' }}>공연 결제</h2>
       <p>공연 ID: {performanceId}</p>
-      <p>선택한 좌석: {seatInfo}</p>
+      <p>{seatInfo}</p>
       <p>결제 금액: 50,000원</p>
       {error && <p style={{ color: 'red' }}>{error}</p>}
       <div style={{ display: 'flex', justifyContent: 'center', marginTop: '20px' }}>
