@@ -47,7 +47,6 @@ function PerformancePayment() {
         throw new Error('결제 처리 중 오류가 발생했습니다.');
       }
 
-      const data = await response.json();
       alert('결제가 완료되었습니다!');
       navigate('/'); // 홈 페이지로 이동
     } catch (err) {
