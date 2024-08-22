@@ -79,7 +79,7 @@ function PerformancePayment() {
       }
 
       alert('결제가 완료되었습니다!');
-      navigate('/'); // 홈 페이지로 이동
+      navigate('/my-tickets'); // 내 티켓 페이지로 이동
     } catch (err) {
       setError(err.message);
       console.error('Payment error:', err);

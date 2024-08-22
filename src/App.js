@@ -9,6 +9,7 @@ import PerformanceList from './components/PerformanceList.js';
 import PerformanceWaiting from './components/PerformanceWaiting.js';
 import PerformanceSelect from './components/PerformanceSelect';
 import PerformancePayment from './components/PerformancePayment.js';
+import MyTickets from './components/MyTickets.js';
 
 function App() {
   return (
@@ -23,6 +24,7 @@ function App() {
             <Route path="/performances/:performanceId/waiting" element={<PerformanceWaiting />} />
             <Route path="/performances/:performanceId/select" element={<PerformanceSelect />} />
             <Route path="/performances/:performanceId/payment" element={<PerformancePayment />} />
+            <Route path="/my-tickets" element={<MyTickets />} />
             <Route path="/" element={<PerformanceList />} />
           </Routes>
         </main>
@@ -50,6 +52,7 @@ function Header() {
         <div>
           <NavLink to="/" end>홈</NavLink>
           <NavLink to="/performances">공연 목록</NavLink>
+          {isLoggedIn && <NavLink to="/my-tickets">내 티켓</NavLink>}
         </div>
         <div>
           {!isLoggedIn && (
