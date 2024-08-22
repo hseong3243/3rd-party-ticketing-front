@@ -38,12 +38,7 @@ function PerformanceSelect() {
           setIsWaiting(true);
           navigate(`/performances/${performanceId}/waiting`);
         } else {
-          const sortedSeats = data.items.sort((a, b) => a.seatId - b.seatId);
-          const numberedSeats = sortedSeats.map((seat, index) => ({
-            ...seat,
-            displayNumber: index + 1
-          }));
-          setSeats(numberedSeats);
+          setSeats(data.items);
           setIsWaiting(false);
         }
 
@@ -84,7 +79,7 @@ function PerformanceSelect() {
         navigate(`/performances/${performanceId}/payment`, { 
           state: { 
             seatId: selectedSeat, 
-            seatNumber: selectedSeatInfo.displayNumber 
+            seatCode: selectedSeatInfo.seatCode 
           } 
         });
       } catch (err) {
@@ -93,9 +88,13 @@ function PerformanceSelect() {
     }
   };
 
+  const getShortSeatCode = (seatCode) => {
+    return seatCode.slice(-3);
+  };
+
   const rows = [];
-  for (let i = 0; i < seats.length; i += 15) {
-    rows.push(seats.slice(i, i + 15));
+  for (let i = 0; i < seats.length; i += 10) {
+    rows.push(seats.slice(i, i + 10));
   }
 
   if (loading) return <div>로딩 중...</div>;
@@ -106,7 +105,12 @@ function PerformanceSelect() {
     <div className="content">
       <h2>좌석 선택</h2>
       <p>공연 ID: {performanceId}</p>
-      <div className="seat-grid" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        width: '100%'
+      }}>
+      <div className="seat-grid" style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
         {rows.map((row, rowIndex) => (
           <div key={rowIndex} style={{ display: 'flex', gap: '5px' }}>
             {row.map((seat) => (
@@ -116,27 +120,32 @@ function PerformanceSelect() {
                 disabled={!seat.seatAvailable}
                 onClick={() => seat.seatAvailable && selectSeat(seat.seatId)}
                 style={{
-                  width: '20px',
-                  height: '20px',
+                  width: '30px',
+                  height: '30px',
                   display: 'flex',
                   justifyContent: 'center',
                   alignItems: 'center',
-                  fontSize: '12px',
+                  fontSize: '10px',
                   border: '1px solid #ccc',
                   backgroundColor: selectedSeat === seat.seatId ? '#4CAF50' : 
                                    seat.seatAvailable ? '#fff' : '#ff0000',
                   cursor: seat.seatAvailable ? 'pointer' : 'not-allowed',
                   color: selectedSeat === seat.seatId ? '#fff' : 
-                         seat.seatAvailable ? '#000' : '#fff'
+                         seat.seatAvailable ? '#000' : '#fff',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  padding: '0 2px'
                 }}
               >
-                {seat.seatAvailable ? seat.displayNumber : 'X'}
+                {getShortSeatCode(seat.seatCode)}
               </button>
             ))}
           </div>
         ))}
       </div>
-      <p>선택된 좌석: {selectedSeat ? seats.find(seat => seat.seatId === selectedSeat)?.displayNumber : '없음'}</p>
+      </div>
+      <p>선택된 좌석: {selectedSeat ? seats.find(seat => seat.seatId === selectedSeat)?.seatCode : '없음'}</p>
       <button 
         onClick={handlePayment}
         disabled={!selectedSeat}

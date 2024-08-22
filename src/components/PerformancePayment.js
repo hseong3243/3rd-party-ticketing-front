@@ -7,12 +7,12 @@ function PerformancePayment() {
   const { performanceId } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
-  const { seatId, seatNumber } = location.state || {};
+  const { seatId, seatCode } = location.state || {};
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const { accessToken } = useAuthStore(state => ({ accessToken: state.accessToken }));
 
-  const seatInfo = seatNumber ? `좌석 번호: ${seatNumber} (ID: ${seatId})` : '좌석 정보 없음';
+  const seatInfo = seatCode ? `${seatCode}` : '좌석 정보 없음';
 
   const buttonStyle = {
     padding: '10px 20px',
@@ -97,7 +97,7 @@ function PerformancePayment() {
     <div className="content" style={{ maxWidth: '600px', margin: '0 auto', padding: '20px' }}>
       <h2 style={{ textAlign: 'center' }}>공연 결제</h2>
       <p>공연 ID: {performanceId}</p>
-      <p>{seatInfo}</p>
+      <p>선택한 좌석: {seatInfo}</p>
       <p>결제 금액: 50,000원</p>
       {error && <p style={{ color: 'red' }}>{error}</p>}
       <div style={{ display: 'flex', justifyContent: 'center', marginTop: '20px' }}>
