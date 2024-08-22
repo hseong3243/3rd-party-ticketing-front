@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import config from '../config';
 import useAuthStore from '../store';
@@ -24,7 +24,38 @@ function PerformancePayment() {
     cursor: 'pointer',
     textDecoration: 'none',
     display: 'inline-block',
+    margin: '0 10px',
   };
+
+  const releaseSeat = useCallback(async () => {
+    if (!seatId) return;
+
+    try {
+      const response = await fetch(`${config.API_URL}/api/seats/release`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`,
+          'performanceId': `${performanceId}`
+        },
+        body: JSON.stringify({
+          seatId: seatId
+        })
+      });
+
+      if (!response.ok) {
+        console.error('좌석 해제 중 오류가 발생했습니다.');
+      }
+    } catch (err) {
+      console.error('Seat release error:', err);
+    }
+  }, [seatId, accessToken, performanceId]);
+
+  useEffect(() => {
+    return () => {
+      releaseSeat();
+    };
+  }, [releaseSeat]);
 
   const handlePayment = async () => {
     setIsLoading(true);
@@ -57,6 +88,11 @@ function PerformancePayment() {
     }
   };
 
+  const handleBackToSeatSelection = async () => {
+    await releaseSeat();
+    navigate(`/performances/${performanceId}/select`);
+  };
+
   return (
     <div className="content" style={{ maxWidth: '600px', margin: '0 auto', padding: '20px' }}>
       <h2 style={{ textAlign: 'center' }}>공연 결제</h2>
@@ -64,13 +100,19 @@ function PerformancePayment() {
       <p>선택한 좌석: {seatInfo}</p>
       <p>결제 금액: 50,000원</p>
       {error && <p style={{ color: 'red' }}>{error}</p>}
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '20px' }}>
+      <div style={{ display: 'flex', justifyContent: 'center', marginTop: '20px' }}>
         <button 
           style={{ ...buttonStyle, opacity: isLoading ? 0.5 : 1 }} 
           onClick={handlePayment} 
           disabled={isLoading}
         >
           {isLoading ? '처리 중...' : '결제하기'}
+        </button>
+        <button 
+          onClick={handleBackToSeatSelection}
+          style={{ ...buttonStyle, backgroundColor: '#2196F3' }}
+        >
+          좌석 선택으로 돌아가기
         </button>
         <button 
           onClick={() => navigate('/')} 
