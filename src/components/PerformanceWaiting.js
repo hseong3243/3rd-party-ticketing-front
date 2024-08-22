@@ -50,7 +50,7 @@ function PerformanceWaiting() {
 
     // Clean up
     return () => clearInterval(intervalId);
-  }, [performanceId, accessToken, setRemainingCount]);
+  }, [performanceId, accessToken, setRemainingCount, navigate]);
 
   return (
     <div className="content">
