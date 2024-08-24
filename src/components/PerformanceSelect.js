@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import config from '../config';
 import useAuthStore from '../store';
@@ -15,63 +15,113 @@ function PerformanceSelect() {
   const setRemainingCount = useCounterStore(state => state.setRemainingCount);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const fetchSeats = async () => {
-      try {
-        const response = await fetch(`${config.API_URL}/api/performances/${performanceId}/seats`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${accessToken}`,
-            'performanceId': `${performanceId}`
-          },
-        });
+  const getCommonHeaders = useCallback((includeContentType = true) => {
+    const headers = {
+      'Authorization': `Bearer ${accessToken}`,
+      'performanceId': `${performanceId}`
+    };
+    if (includeContentType) {
+      headers['Content-Type'] = 'application/json';
+    }
+    return headers;
+  }, [accessToken, performanceId]);
 
-        if (!response.ok) {
-          throw new Error('좌석 정보를 불러오는 데 실패했습니다.');
-        }
+  const fetchSeats = useCallback(async () => {
+    try {
+      const response = await fetch(`${config.API_URL}/api/performances/${performanceId}/seats`, {
+        method: 'GET',
+        headers: getCommonHeaders()
+      });
 
-        const data = await response.json();
-
-        if ('remainingCount' in data) {
-          setRemainingCount(data.remainingCount);
-          setIsWaiting(true);
-          navigate(`/performances/${performanceId}/waiting`);
-        } else {
-          setSeats(data.items);
-          setIsWaiting(false);
-        }
-
-        setLoading(false);
-      } catch (err) {
-        setError(err.message);
-        setLoading(false);
+      if (!response.ok) {
+        throw new Error('좌석 정보를 불러오는 데 실패했습니다.');
       }
+
+      const data = await response.json();
+
+      if ('remainingCount' in data) {
+        setRemainingCount(data.remainingCount);
+        setIsWaiting(true);
+        navigate(`/performances/${performanceId}/waiting`);
+      } else {
+        setSeats(data.items);
+        setIsWaiting(false);
+      }
+
+      setLoading(false);
+    } catch (err) {
+      setError(err.message);
+      setLoading(false);
+    }
+  }, [performanceId, getCommonHeaders, setRemainingCount, navigate]);
+
+  useEffect(() => {
+    fetchSeats();
+
+    const eventSource = new EventSource(`${config.API_URL}/api/subscribe/performances/${performanceId}`, {
+      headers: getCommonHeaders(false)
+    });
+
+    eventSource.onopen = () => {
+      console.log("SSE 연결됨");
+    }
+
+    eventSource.addEventListener('SELECT', (event) => {
+      console.log("SELECT 이벤트 수신:", event);
+      try {
+        const data = JSON.parse(event.data);
+        console.log("파싱된 데이터:", data);
+        if (data.status === "SELECTED") {
+          setSeats(prevSeats => {
+            console.log("이전 좌석 상태:", prevSeats);
+            const updatedSeats = prevSeats.map(seat => 
+              String(seat.seatId) === data.seatId ? { ...seat, seatAvailable: false } : seat
+            );
+            console.log("업데이트된 좌석 상태:", updatedSeats);
+            return updatedSeats;
+          });
+        }
+      } catch (error) {
+        console.error("이벤트 데이터 파싱 오류:", error);
+      }
+    });
+
+    eventSource.onerror = (error) => {
+      console.error('SSE 에러:', error);
+      eventSource.close();
     };
 
-    fetchSeats();
-  }, [performanceId, accessToken, setRemainingCount, navigate]);
+    return () => {
+      console.log("이벤트 소스 닫힘");
+      eventSource.close();
+    };
+  }, [performanceId, getCommonHeaders, fetchSeats]);
 
-  const selectSeat = (seatId) => {
+  const selectSeat = useCallback((seatId) => {
     setSelectedSeat(seatId);
-  };
+  }, []);
 
-  const handlePayment = async () => {
+  const handlePayment = useCallback(async () => {
     if (selectedSeat) {
       try {
-        const response = await fetch(`${config.API_URL}/api/seats/select`, {
+        const sseResponse = await fetch(`${config.API_URL}/api/performances/${performanceId}/seats/${selectedSeat}/select`, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${accessToken}`,
-            'performanceId': `${performanceId}`
-          },
+          headers: getCommonHeaders()
+        });
+
+        if (!sseResponse.ok) {
+          throw new Error('SSE 이벤트 발생에 실패했습니다.');
+        }
+
+        const dbResponse = await fetch(`${config.API_URL}/api/seats/select`, {
+          method: 'POST',
+          headers: getCommonHeaders(),
           body: JSON.stringify({
             seatId: selectedSeat
           })
         });
 
-        if (!response.ok) {
+        if (!dbResponse.ok) {
           throw new Error('좌석 선택에 실패했습니다.');
         }
 
@@ -86,20 +136,20 @@ function PerformanceSelect() {
         setError(err.message);
       }
     }
-  };
+  }, [selectedSeat, performanceId, getCommonHeaders, seats, navigate]);
 
-  const getShortSeatCode = (seatCode) => {
+  const getShortSeatCode = useCallback((seatCode) => {
     return seatCode.slice(-3);
-  };
+  }, []);
+
+  if (loading) return <div>로딩 중...</div>;
+  if (error) return <div>에러: {error}</div>;
+  if (isWaiting) return <div>대기열에 진입했습니다. 잠시만 기다려주세요.</div>;
 
   const rows = [];
   for (let i = 0; i < seats.length; i += 10) {
     rows.push(seats.slice(i, i + 10));
   }
-
-  if (loading) return <div>로딩 중...</div>;
-  if (error) return <div>에러: {error}</div>;
-  if (isWaiting) return <div>대기열에 진입했습니다. 잠시만 기다려주세요.</div>;
 
   return (
     <div className="content">
