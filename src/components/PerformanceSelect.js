@@ -57,8 +57,8 @@ function PerformanceSelect() {
     }
   }, [performanceId, getCommonHeaders, setRemainingCount, navigate]);
 
-  const handleSelectEvent = useCallback((event) => {
-    console.log("SELECT 이벤트 수신:", event);
+  const handleSeatEvent = useCallback((event) => {
+    console.log("좌석 이벤트 수신:", event);
     try {
       const data = JSON.parse(event.data);
       console.log("파싱된 데이터:", data);
@@ -82,13 +82,16 @@ function PerformanceSelect() {
     // 새로운 SSE 연결 생성
     connectSse(performanceId, accessToken);
     
-    addEventListenerToSse('SELECT', handleSelectEvent);
+    // SELECT와 RELEASE 이벤트 모두 동일한 핸들러를 사용합니다.
+    addEventListenerToSse('SELECT', handleSeatEvent);
+    addEventListenerToSse('RELEASE', handleSeatEvent);
 
     return () => {
-      removeEventListenerFromSse('SELECT', handleSelectEvent);
+      removeEventListenerFromSse('SELECT', handleSeatEvent);
+      removeEventListenerFromSse('RELEASE', handleSeatEvent);
       // SSE 연결은 여기서 해제하지 않습니다.
     };
-  }, [performanceId, accessToken, connectSse, addEventListenerToSse, removeEventListenerFromSse, fetchSeats, handleSelectEvent]);
+  }, [performanceId, accessToken, connectSse, addEventListenerToSse, removeEventListenerFromSse, fetchSeats, handleSeatEvent]);
 
   const selectSeat = useCallback((seatId) => {
     setSelectedSeat(seatId);
