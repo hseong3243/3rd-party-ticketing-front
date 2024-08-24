@@ -1,5 +1,7 @@
 import { create } from 'zustand';
 import config from './config';
+import { EventSourcePolyfill, NativeEventSource } from "event-source-polyfill";
+const EventSource = EventSourcePolyfill || NativeEventSource;
 
 const useSseStore = create((set, get) => ({
   eventSource: null,
