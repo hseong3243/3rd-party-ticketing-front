@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import config from '../config';
 import useAuthStore from '../store';
 import useCounterStore from '../counterStore';
+import useSseStore from '../sseStore';
 
 function PerformanceSelect() {
   const { performanceId } = useParams();
@@ -13,6 +14,7 @@ function PerformanceSelect() {
   const [isWaiting, setIsWaiting] = useState(false);
   const { accessToken } = useAuthStore(state => ({ accessToken: state.accessToken }));
   const setRemainingCount = useCounterStore(state => state.setRemainingCount);
+  const { connectSse, addEventListenerToSse, removeEventListenerFromSse } = useSseStore();
   const navigate = useNavigate();
 
   const getCommonHeaders = useCallback((includeContentType = true) => {
@@ -55,47 +57,38 @@ function PerformanceSelect() {
     }
   }, [performanceId, getCommonHeaders, setRemainingCount, navigate]);
 
+  const handleSelectEvent = useCallback((event) => {
+    console.log("SELECT 이벤트 수신:", event);
+    try {
+      const data = JSON.parse(event.data);
+      console.log("파싱된 데이터:", data);
+      if (data.status === "SELECTED" || data.status === "SELECTABLE") {
+        setSeats(prevSeats => {
+          return prevSeats.map(seat => 
+            String(seat.seatId) === data.seatId 
+              ? { ...seat, seatAvailable: data.status === "SELECTABLE" } 
+              : seat
+          );
+        });
+      }
+    } catch (error) {
+      console.error("이벤트 데이터 파싱 오류:", error);
+    }
+  }, []);
+
   useEffect(() => {
     fetchSeats();
-
-    const eventSource = new EventSource(`${config.API_URL}/api/subscribe/performances/${performanceId}`, {
-      headers: getCommonHeaders(false)
-    });
-
-    eventSource.onopen = () => {
-      console.log("SSE 연결됨");
-    }
-
-    eventSource.addEventListener('SELECT', (event) => {
-      console.log("SELECT 이벤트 수신:", event);
-      try {
-        const data = JSON.parse(event.data);
-        console.log("파싱된 데이터:", data);
-        if (data.status === "SELECTED") {
-          setSeats(prevSeats => {
-            console.log("이전 좌석 상태:", prevSeats);
-            const updatedSeats = prevSeats.map(seat => 
-              String(seat.seatId) === data.seatId ? { ...seat, seatAvailable: false } : seat
-            );
-            console.log("업데이트된 좌석 상태:", updatedSeats);
-            return updatedSeats;
-          });
-        }
-      } catch (error) {
-        console.error("이벤트 데이터 파싱 오류:", error);
-      }
-    });
-
-    eventSource.onerror = (error) => {
-      console.error('SSE 에러:', error);
-      eventSource.close();
-    };
+    
+    // 새로운 SSE 연결 생성
+    connectSse(performanceId, accessToken);
+    
+    addEventListenerToSse('SELECT', handleSelectEvent);
 
     return () => {
-      console.log("이벤트 소스 닫힘");
-      eventSource.close();
+      removeEventListenerFromSse('SELECT', handleSelectEvent);
+      // SSE 연결은 여기서 해제하지 않습니다.
     };
-  }, [performanceId, getCommonHeaders, fetchSeats]);
+  }, [performanceId, accessToken, connectSse, addEventListenerToSse, removeEventListenerFromSse, fetchSeats, handleSelectEvent]);
 
   const selectSeat = useCallback((seatId) => {
     setSelectedSeat(seatId);
