@@ -47,19 +47,6 @@ function PerformancePayment() {
       if (!dbResponse.ok) {
         console.error('DB 좌석 해제 중 오류가 발생했습니다.');
       }
-
-      // SSE 이벤트 요청
-      const sseResponse = await fetch(`${config.API_URL}/api/performances/${performanceId}/seats/${seatId}/release`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'performanceId': `${performanceId}`
-        }
-      });
-
-      if (!sseResponse.ok) {
-        console.error('SSE 좌석 해제 이벤트 발생 중 오류가 발생했습니다.');
-      }
     } catch (err) {
       console.error('Seat release error:', err);
     }

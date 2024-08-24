@@ -58,29 +58,29 @@ function PerformanceSelect() {
   }, [performanceId, getCommonHeaders, setRemainingCount, navigate]);
 
   const handleSeatEvent = useCallback((event) => {
-    console.log("좌석 이벤트 수신:", event);
-    try {
-      const data = JSON.parse(event.data);
-      console.log("파싱된 데이터:", data);
-      if (data.status === "SELECTED" || data.status === "SELECTABLE") {
-        setSeats(prevSeats => {
-          return prevSeats.map(seat => 
-            String(seat.seatId) === data.seatId 
-              ? { ...seat, seatAvailable: data.status === "SELECTABLE" } 
-              : seat
-          );
-        });
-        
-        // 현재 선택된 좌석이 다른 사용자에 의해 선택되었다면 선택 해제
-        if (data.status === "SELECTED" && String(selectedSeat) === data.seatId) {
-          setSelectedSeat(null);
-          alert("선택하신 좌석이 다른 사용자에 의해 선택되었습니다. 다른 좌석을 선택해 주세요.");
-        }
+  console.log("좌석 이벤트 수신:", event);
+  try {
+    const data = JSON.parse(event.data);
+    console.log("파싱된 데이터:", data);
+    if (data.status === "SELECTED" || data.status === "SELECTABLE") {
+      setSeats(prevSeats => {
+        return prevSeats.map(seat => 
+          seat.seatId === data.seatId 
+            ? { ...seat, seatAvailable: data.status === "SELECTABLE" } 
+            : seat
+        );
+      });
+      
+      // 현재 선택된 좌석이 다른 사용자에 의해 선택되었다면 선택 해제
+      if (data.status === "SELECTED" && String(selectedSeat) === data.seatId) {
+        setSelectedSeat(null);
+        alert("선택하신 좌석이 다른 사용자에 의해 선택되었습니다. 다른 좌석을 선택해 주세요.");
       }
-    } catch (error) {
-      console.error("이벤트 데이터 파싱 오류:", error);
     }
-  }, [selectedSeat]);
+  } catch (error) {
+    console.error("이벤트 데이터 파싱 오류:", error);
+  }
+}, [selectedSeat]);
 
   useEffect(() => {
     fetchSeats();
@@ -106,14 +106,6 @@ function PerformanceSelect() {
   const handlePayment = useCallback(async () => {
     if (selectedSeat) {
       try {
-        const sseResponse = await fetch(`${config.API_URL}/api/performances/${performanceId}/seats/${selectedSeat}/select`, {
-          method: 'POST',
-          headers: getCommonHeaders()
-        });
-
-        if (!sseResponse.ok) {
-          throw new Error('SSE 이벤트 발생에 실패했습니다.');
-        }
 
         const dbResponse = await fetch(`${config.API_URL}/api/seats/select`, {
           method: 'POST',
