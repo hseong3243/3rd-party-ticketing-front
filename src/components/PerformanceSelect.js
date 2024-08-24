@@ -14,7 +14,7 @@ function PerformanceSelect() {
   const [isWaiting, setIsWaiting] = useState(false);
   const { accessToken } = useAuthStore(state => ({ accessToken: state.accessToken }));
   const setRemainingCount = useCounterStore(state => state.setRemainingCount);
-  const { connectSse, addEventListenerToSse, removeEventListenerFromSse } = useSseStore();
+  const { connectSse, disconnectSse, addEventListenerToSse, removeEventListenerFromSse } = useSseStore();
   const navigate = useNavigate();
 
   const getCommonHeaders = useCallback((includeContentType = true) => {
@@ -58,46 +58,42 @@ function PerformanceSelect() {
   }, [performanceId, getCommonHeaders, setRemainingCount, navigate]);
 
   const handleSeatEvent = useCallback((event) => {
-  console.log("좌석 이벤트 수신:", event);
-  try {
-    const data = JSON.parse(event.data);
-    console.log("파싱된 데이터:", data);
-    if (data.status === "SELECTED" || data.status === "SELECTABLE") {
-      setSeats(prevSeats => {
-        return prevSeats.map(seat => 
-          seat.seatId === data.seatId 
-            ? { ...seat, seatAvailable: data.status === "SELECTABLE" } 
-            : seat
-        );
-      });
-      
-      // 현재 선택된 좌석이 다른 사용자에 의해 선택되었다면 선택 해제
-      if (data.status === "SELECTED" && selectedSeat === data.seatId) {
-        setSelectedSeat(null);
-        alert("선택하신 좌석이 다른 사용자에 의해 선택되었습니다. 다른 좌석을 선택해 주세요.");
+    console.log("좌석 이벤트 수신:", event);
+    try {
+      const data = JSON.parse(event.data);
+      console.log("파싱된 데이터:", data);
+      if (data.status === "SELECTED" || data.status === "SELECTABLE") {
+        setSeats(prevSeats => {
+          return prevSeats.map(seat => 
+            seat.seatId === data.seatId 
+              ? { ...seat, seatAvailable: data.status === "SELECTABLE" } 
+              : seat
+          );
+        });
+        
+        if (data.status === "SELECTED" && selectedSeat === data.seatId) {
+          setSelectedSeat(null);
+          alert("선택하신 좌석이 다른 사용자에 의해 선택되었습니다. 다른 좌석을 선택해 주세요.");
+        }
       }
+    } catch (error) {
+      console.error("이벤트 데이터 파싱 오류:", error);
     }
-  } catch (error) {
-    console.error("이벤트 데이터 파싱 오류:", error);
-  }
-}, [selectedSeat]);
+  }, [selectedSeat]);
 
   useEffect(() => {
+    disconnectSse();
+    connectSse(performanceId, accessToken);
     fetchSeats();
     
-    // 새로운 SSE 연결 생성
-    connectSse(performanceId, accessToken);
-    
-    // SELECT와 RELEASE 이벤트 모두 동일한 핸들러를 사용합니다.
     addEventListenerToSse('SELECT', handleSeatEvent);
     addEventListenerToSse('RELEASE', handleSeatEvent);
 
     return () => {
       removeEventListenerFromSse('SELECT', handleSeatEvent);
       removeEventListenerFromSse('RELEASE', handleSeatEvent);
-      // SSE 연결은 여기서 해제하지 않습니다.
     };
-  }, [performanceId, accessToken, connectSse, addEventListenerToSse, removeEventListenerFromSse, fetchSeats, handleSeatEvent]);
+  }, [performanceId, accessToken, connectSse, disconnectSse, addEventListenerToSse, removeEventListenerFromSse, fetchSeats, handleSeatEvent]);
 
   const selectSeat = useCallback((seatId) => {
     setSelectedSeat(seatId);
@@ -106,7 +102,6 @@ function PerformanceSelect() {
   const handlePayment = useCallback(async () => {
     if (selectedSeat) {
       try {
-
         const dbResponse = await fetch(`${config.API_URL}/api/seats/select`, {
           method: 'POST',
           headers: getCommonHeaders(),
@@ -154,40 +149,40 @@ function PerformanceSelect() {
         justifyContent: 'center',
         width: '100%'
       }}>
-      <div className="seat-grid" style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-        {rows.map((row, rowIndex) => (
-          <div key={rowIndex} style={{ display: 'flex', gap: '5px' }}>
-            {row.map((seat) => (
-              <button
-                key={seat.seatId}
-                className={`seat ${seat.seatAvailable ? 'available' : 'unavailable'} ${selectedSeat === seat.seatId ? 'selected' : ''}`}
-                disabled={!seat.seatAvailable}
-                onClick={() => seat.seatAvailable && selectSeat(seat.seatId)}
-                style={{
-                  width: '30px',
-                  height: '30px',
-                  display: 'flex',
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  fontSize: '10px',
-                  border: '1px solid #ccc',
-                  backgroundColor: selectedSeat === seat.seatId ? '#4CAF50' : 
-                                   seat.seatAvailable ? '#fff' : '#ff0000',
-                  cursor: seat.seatAvailable ? 'pointer' : 'not-allowed',
-                  color: selectedSeat === seat.seatId ? '#fff' : 
-                         seat.seatAvailable ? '#000' : '#fff',
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  padding: '0 2px'
-                }}
-              >
-                {getShortSeatCode(seat.seatCode)}
-              </button>
-            ))}
-          </div>
-        ))}
-      </div>
+        <div className="seat-grid" style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+          {rows.map((row, rowIndex) => (
+            <div key={rowIndex} style={{ display: 'flex', gap: '5px' }}>
+              {row.map((seat) => (
+                <button
+                  key={seat.seatId}
+                  className={`seat ${seat.seatAvailable ? 'available' : 'unavailable'} ${selectedSeat === seat.seatId ? 'selected' : ''}`}
+                  disabled={!seat.seatAvailable}
+                  onClick={() => seat.seatAvailable && selectSeat(seat.seatId)}
+                  style={{
+                    width: '30px',
+                    height: '30px',
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    fontSize: '10px',
+                    border: '1px solid #ccc',
+                    backgroundColor: selectedSeat === seat.seatId ? '#4CAF50' : 
+                                     seat.seatAvailable ? '#fff' : '#ff0000',
+                    cursor: seat.seatAvailable ? 'pointer' : 'not-allowed',
+                    color: selectedSeat === seat.seatId ? '#fff' : 
+                           seat.seatAvailable ? '#000' : '#fff',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    padding: '0 2px'
+                  }}
+                >
+                  {getShortSeatCode(seat.seatCode)}
+                </button>
+              ))}
+            </div>
+          ))}
+        </div>
       </div>
       <p>선택된 좌석: {selectedSeat ? seats.find(seat => seat.seatId === selectedSeat)?.seatCode : '없음'}</p>
       <button 
