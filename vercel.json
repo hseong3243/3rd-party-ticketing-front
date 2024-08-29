@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "http://team3-dev-1758215191.ap-northeast-2.elb.amazonaws.com/api/$1"
+      "destination": "http://woowaticket.site/api/$1"
     }
   ]
 }
