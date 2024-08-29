@@ -1,8 +1,0 @@
-{
-  "rewrites": [
-    {
-      "source": "/api/(.*)",
-      "destination": "http://woowaticket.site/api/$1"
-    }
-  ]
-}
